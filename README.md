@@ -13,5 +13,5 @@
 
 2. Upload it
 ```bash
- aws lambda update-function-code --function-name discussions-to-collection --zip-file fileb://function.zip
+ aws lambda update-function-code --function-name demo_passwords --zip-file fileb://function.zip
 ```

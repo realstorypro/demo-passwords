@@ -1,38 +1,41 @@
+# frozen_string_literal: true
+
 require 'json'
+require 'digest'
+
 require 'httparty'
 require 'dotenv/load'
 
+# require 'awesome_print'
+# require 'byebug'
+
 def lambda_handler(event:, context:)
-    response = HTTParty.get('https://pub.storypro.io/feed.json')
-    entries = JSON.parse(response.body)['entries']
+  time = Time.now.utc
 
-    discussions = []
+  start_date = Date.parse('1/1/2022')
+  current_date = Date.parse(time.strftime("%d/%m/%Y"))
 
-    entries.each do |entry|
-        discussions.push entry if entry['type'] == 'Discussion'
+  password_seed = get_seed(start_date: start_date, end_date: current_date)
 
-    end
+  users = []
 
-    discussions.shuffle!
+  500.times do |i|
+    username = "demo_user_5#{password_seed}#{i}"
+    users.push({ username: username, password: Digest::SHA2.hexdigest("#{username}-#{password_seed}")[0..10] })
+  end
 
-    # request_body = {
-    #   name: 'discussions',
-    #   data: discussions
-    # }
+  { statusCode: 200, body: users.sample.to_json }
+end
 
-    request_body = {
-      data: discussions
-    }
+def get_seed(start_date:, end_date:)
+  days_passed = Integer(end_date - start_date)
+  seed = days_passed / 30
 
-    rsp = HTTParty.put('https://beta-api.customer.io/v1/api/collections/1',
-                       body: request_body.to_json,
-                       headers: {
-                           "Authorization" => "Bearer #{ENV['API_KEY']}"
-                       }
+  # we dont want the seed to be zero
+  return 1 if seed.zero?
 
-    )
-
-    { statusCode: 200, body: discussions.to_json }
+  # return seed + 1 since zero is 1
+  seed + 1
 end
 
 # lambda_handler(event: 'hi', context: 'bye')
